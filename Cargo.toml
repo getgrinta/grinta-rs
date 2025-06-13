@@ -1,0 +1,27 @@
+[package]
+name = "grinta"
+version = "0.1.0"
+description = "Grinta launcher barebones"
+authors = ["Ryuz <ryuzer@proton.me>"]
+license = "Apache2"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.82"
+crossterm = "0.27.0"
+ratatui = "0.29.0"
+tui-textarea = "0.4.0"
+open = "5.1.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.36.0", features = ["full"] }
+once_cell = "1.19.0"
+chrono = { version = "0.4.34", features = ["serde"] }
+dirs = "5.0.1"
+clap = { version = "4.5.3", features = ["derive"] }
+ratatui-image = "0.8.1"
+base64 = "0.21.7"
+image = "0.24.9"
+icns = "0.3.1"
+reqwest = { version = "0.11", features = ["json"] }
+urlencoding = "2.1.3"
