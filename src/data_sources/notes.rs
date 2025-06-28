@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use tokio::process::Command;
 
 use crate::core::{CommandItem, Handler};
 
@@ -15,7 +15,7 @@ pub struct Note {
 }
 
 #[cfg(target_os = "macos")]
-pub fn get_notes() -> Vec<CommandItem> {
+pub async fn get_notes() -> Vec<CommandItem> {
     let mut notes = Vec::new();
     
     // JavaScript to fetch notes from the Notes app
@@ -44,6 +44,7 @@ pub fn get_notes() -> Vec<CommandItem> {
     if let Ok(output) = Command::new("osascript")
         .args(["-l", "JavaScript", "-e", script])
         .output()
+        .await
     {
         // According to the TypeScript reference, the output is in stderr, not stdout
         if let Ok(output_str) = String::from_utf8(output.stderr) {
@@ -63,7 +64,7 @@ pub fn get_notes() -> Vec<CommandItem> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn open_note(note_id: &str) -> std::io::Result<()> {
+pub async fn open_note(note_id: &str) -> std::io::Result<()> {
     // Open the note with its ID using AppleScript
     // Using the simpler and more reliable approach from the TypeScript reference
     let script = format!(r#"
@@ -77,11 +78,12 @@ pub fn open_note(note_id: &str) -> std::io::Result<()> {
     Command::new("osascript")
         .args(["-l", "JavaScript", "-e", &script])
         .output()
+        .await
         .map(|_| ())
 }
 
 #[cfg(target_os = "macos")]
-pub fn create_note(name: &str, body: Option<&str>) -> std::io::Result<String> {
+pub async fn create_note(name: &str, body: Option<&str>) -> std::io::Result<String> {
     // Format the note body with title
     let formatted_body = format_note_body(name, body.unwrap_or(""));
     
@@ -104,7 +106,8 @@ pub fn create_note(name: &str, body: Option<&str>) -> std::io::Result<String> {
     // Run osascript to execute the JavaScript
     let output = Command::new("osascript")
         .args(["-l", "JavaScript", "-e", &script])
-        .output()?;
+        .output()
+        .await?;
     
     // Get the note ID from stderr
     if let Ok(note_id) = String::from_utf8(output.stderr) {
@@ -120,7 +123,7 @@ pub fn create_note(name: &str, body: Option<&str>) -> std::io::Result<String> {
 }
 
 #[cfg(target_os = "macos")]
-pub fn delete_note(note_id: &str) -> std::io::Result<()> {
+pub async fn delete_note(note_id: &str) -> std::io::Result<()> {
     // JavaScript to delete a note
     let script = format!(r#"
         const Notes = Application("Notes");
@@ -132,6 +135,7 @@ pub fn delete_note(note_id: &str) -> std::io::Result<()> {
     Command::new("osascript")
         .args(["-l", "JavaScript", "-e", &script])
         .output()
+        .await
         .map(|_| ())
 }
 
@@ -144,4 +148,10 @@ fn format_note_body(title: &str, body: &str) -> String {
     }
     format!("{}
 <div>{}</div>", title_template, body)
+}
+
+/// Stub implementation for non-macOS targets.
+#[cfg(not(target_os = "macos"))]
+pub async fn get_notes() -> Vec<CommandItem> {
+    Vec::new()
 }

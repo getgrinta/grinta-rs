@@ -1,4 +1,4 @@
-use std::process::Command;
+use tokio::process::Command;
 
 use crate::core::{CommandItem, CommandType, Handler};
 
@@ -6,8 +6,8 @@ use crate::core::{CommandItem, CommandType, Handler};
 /// This is performed by invoking the `shortcuts list` CLI (macOS 12+).
 /// Returns a vector of `CommandItem`s that can be displayed in the UI.
 #[cfg(target_os = "macos")]
-pub fn get_shortcuts() -> Vec<CommandItem> {
-    let output = match Command::new("shortcuts").arg("list").output() {
+pub async fn get_shortcuts() -> Vec<CommandItem> {
+    let output = match Command::new("shortcuts").arg("list").output().await {
         Ok(output) => output,
         Err(e) => {
             eprintln!("Failed to execute `shortcuts` command: {}", e);
@@ -36,6 +36,6 @@ pub fn get_shortcuts() -> Vec<CommandItem> {
 
 /// Stub implementation for non-macOS targets.
 #[cfg(not(target_os = "macos"))]
-pub fn get_shortcuts() -> Vec<CommandItem> {
+pub async fn get_shortcuts() -> Vec<CommandItem> {
     Vec::new()
 }

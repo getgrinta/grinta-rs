@@ -1,8 +1,7 @@
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-
+use tokio::fs;
+use tokio::io::AsyncReadExt;
 
 use crate::core::{CommandItem, Handler};
 
@@ -33,61 +32,61 @@ struct BookmarkFile {
 }
 
 /// Get all bookmarks from Chrome and Chromium browsers
-pub fn get_browser_bookmarks() -> Vec<CommandItem> {
+pub async fn get_browser_bookmarks() -> Vec<CommandItem> {
     let mut bookmarks = Vec::new();
     
     // Get Chrome bookmarks
-    bookmarks.extend(get_chrome_bookmarks());
+    bookmarks.extend(get_chrome_bookmarks().await);
     
     // Get Chromium bookmarks
-    bookmarks.extend(get_chromium_bookmarks());
+    bookmarks.extend(get_chromium_bookmarks().await);
     
     bookmarks
 }
 
 /// Get bookmarks from Chrome browser
-fn get_chrome_bookmarks() -> Vec<CommandItem> {
+async fn get_chrome_bookmarks() -> Vec<CommandItem> {
     let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
     let base_path = home_dir.join("Library/Application Support/Google/Chrome");
     
     // Check Default profile
-    let mut bookmarks = get_bookmarks_from_profile(&base_path.join("Default"));
+    let mut bookmarks = get_bookmarks_from_profile(&base_path.join("Default")).await;
     
     // Check numbered profiles (1-9)
     for i in 1..=9 {
         let profile_path = base_path.join(format!("Profile {}", i));
-        bookmarks.extend(get_bookmarks_from_profile(&profile_path));
+        bookmarks.extend(get_bookmarks_from_profile(&profile_path).await);
     }
     
     bookmarks
 }
 
 /// Get bookmarks from Chromium browser
-fn get_chromium_bookmarks() -> Vec<CommandItem> {
+async fn get_chromium_bookmarks() -> Vec<CommandItem> {
     let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
     let base_path = home_dir.join("Library/Application Support/Chromium");
     
     // Check Default profile
-    let mut bookmarks = get_bookmarks_from_profile(&base_path.join("Default"));
+    let mut bookmarks = get_bookmarks_from_profile(&base_path.join("Default")).await;
     
     // Check numbered profiles (1-9)
     for i in 1..=9 {
         let profile_path = base_path.join(format!("Profile {}", i));
-        bookmarks.extend(get_bookmarks_from_profile(&profile_path));
+        bookmarks.extend(get_bookmarks_from_profile(&profile_path).await);
     }
     
     bookmarks
 }
 
 /// Get bookmarks from a specific browser profile
-fn get_bookmarks_from_profile(profile_path: &Path) -> Vec<CommandItem> {
+async fn get_bookmarks_from_profile(profile_path: &Path) -> Vec<CommandItem> {
     let bookmarks_path = profile_path.join("Bookmarks");
     
     if !bookmarks_path.exists() {
         return Vec::new();
     }
     
-    match read_bookmarks_file(&bookmarks_path) {
+    match read_bookmarks_file(&bookmarks_path).await {
         Ok(bookmark_file) => extract_bookmarks_from_file(bookmark_file),
         Err(e) => {
             eprintln!("Error reading bookmarks from {:?}: {}", bookmarks_path, e);
@@ -97,10 +96,10 @@ fn get_bookmarks_from_profile(profile_path: &Path) -> Vec<CommandItem> {
 }
 
 /// Read and parse the bookmarks file
-fn read_bookmarks_file(path: &Path) -> Result<BookmarkFile, Box<dyn std::error::Error>> {
-    let mut file = File::open(path)?;
+async fn read_bookmarks_file(path: &Path) -> Result<BookmarkFile, Box<dyn std::error::Error + Send + Sync>> {
+    let mut file = fs::File::open(path).await?;
     let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
+    file.read_to_string(&mut contents).await?;
     
     let bookmark_file: BookmarkFile = serde_json::from_str(&contents)?;
     Ok(bookmark_file)

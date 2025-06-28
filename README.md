@@ -2,7 +2,7 @@
 
 **Grinta is a blazing-fast, AI-powered Spotlight replacement for macOS, built with Rust.**
 
-This project is the (upcoming) core backend for the Grinta desktop application, designed to be a powerful and extensible search tool that helps you find what you need in an instant. Whether you're looking for an application, a file, a browser bookmark, or even an Apple Note, Grinta has you covered.
+This project is the core backend for the Grinta desktop application, designed to be a powerful and extensible search tool that helps you find what you need in an instant. Whether you're looking for an application, a file, a browser bookmark, or even an Apple Note, Grinta has you covered.
 
 ## Features
 

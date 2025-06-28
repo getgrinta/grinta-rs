@@ -30,7 +30,9 @@ async fn main() -> Result<()> {
     // TUI mode
     let (tx, mut rx) = mpsc::channel(1);
     let (fs_tx, mut fs_rx) = mpsc::channel(1);
+    let (web_tx, mut web_rx) = mpsc::channel(1);
     let (refresh_tx, mut refresh_rx) = mpsc::channel(1);
+    let (error_tx, mut error_rx) = mpsc::channel(1);
 
     let tx_clone = tx.clone();
     tokio::spawn(async move {
@@ -49,13 +51,28 @@ async fn main() -> Result<()> {
     let mut app_state = AppState::new(history, initial_items);
 
     loop {
+        let mut should_filter = false;
+        
         if let Ok(items) = rx.try_recv() {
             app_state.items = items;
-            app_state.filter_items();
+            should_filter = true;
         }
 
         if let Ok(items) = fs_rx.try_recv() {
             app_state.fs_items = items;
+            should_filter = true;
+        }
+
+        if let Ok(items) = web_rx.try_recv() {
+            app_state.web_items = items;
+            should_filter = true;
+        }
+
+        if let Ok(error_msg) = error_rx.try_recv() {
+            app_state.set_error(error_msg);
+        }
+        
+        if should_filter {
             app_state.filter_items();
         }
 
@@ -76,7 +93,9 @@ async fn main() -> Result<()> {
                         key,
                         &mut app_state,
                         fs_tx.clone(),
+                        web_tx.clone(),
                         refresh_tx.clone(),
+                        Some(error_tx.clone()),
                     ) {
                         break;
                     }

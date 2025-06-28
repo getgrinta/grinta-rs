@@ -2,16 +2,22 @@ use crate::state::AppState;
 use chrono::Local;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::{Modifier, Style},
-    widgets::{Block, Borders, Cell, Row, Table},
+    style::{Color, Modifier, Style},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Frame,
 };
 
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {
+    let constraints = if app_state.error_message.is_some() {
+        [Constraint::Length(3), Constraint::Min(1), Constraint::Length(3)].as_ref()
+    } else {
+        [Constraint::Length(3), Constraint::Min(1), Constraint::Length(0)].as_ref()
+    };
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
+        .constraints(constraints)
         .split(frame.area());
 
     app_state
@@ -62,4 +68,17 @@ pub fn render(frame: &mut Frame, app_state: &mut AppState) {
         .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
     frame.render_stateful_widget(table, chunks[1], &mut app_state.table_state);
+
+    // Render error bar if there's an error
+    if let Some(error_msg) = &app_state.error_message {
+        let error_paragraph = Paragraph::new(error_msg.as_str())
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("Error")
+                    .border_style(Style::default().fg(Color::Red))
+            )
+            .style(Style::default().fg(Color::Red));
+        frame.render_widget(error_paragraph, chunks[2]);
+    }
 }
